@@ -1,0 +1,7 @@
+1> Setting up the hardware 
+
+	1.1> Setup the raspi and establish ssh with a host system
+	1.2> Password for raspi's : user 
+	1.3> 
+
+2> 
