@@ -15,10 +15,11 @@ server.listen(10)
 while True:
 
     client_socket,accept = server.accept()
-    print("running")
     print(f"Connection established to {client_socket}")
     message = client_socket.recv(1024).decode('ascii')
     print(f"The message is {message} ")
+    client_socket.send(("\nMessage Received !").encode("ascii"))
+    
 
   
 
