@@ -1,7 +1,7 @@
 import socket
 
 host = "10.2.1.223"
-port = 4568
+port = 9124
 
 server = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 
