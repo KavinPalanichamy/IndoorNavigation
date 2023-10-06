@@ -18,7 +18,7 @@ int main() {
     serverAddress.sin_addr.s_addr = inet_addr("10.2.1.223");  
 
     // Connect to the serve
-
+    
     if (connect(clientSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) == -1) {
         perror("Error connecting to the server");
         close(clientSocket);
