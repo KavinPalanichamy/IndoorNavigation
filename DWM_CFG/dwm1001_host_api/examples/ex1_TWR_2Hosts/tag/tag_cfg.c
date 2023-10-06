@@ -10,8 +10,9 @@
  *
  */
 
-#include "/home/user/Desktop/DEV_2023/DWM1001-DEV_K-master/DWM1001_host_api/dwm1001_host_api/include/dwm_api.h"
-#include "/home/user/Desktop/DEV_2023/DWM1001-DEV_K-master/DWM1001_host_api/dwm1001_host_api/platform/rpi/hal/hal.h"
+#include "dwm_api.h"
+#include "hal.h"
+
 
 int main(void)
 {
@@ -95,3 +96,4 @@ int main(void)
 
    return 0;
 }
+
