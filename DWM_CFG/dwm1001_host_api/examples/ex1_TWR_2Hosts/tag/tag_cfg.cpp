@@ -94,25 +94,15 @@ int main(void) {
         HAL_Print("dwm_loc_get(&loc):\n");
 
         if (dwm_loc_get(&loc) == RV_OK) {
-            HAL_Print("\t[X , Y , Z , Q]  -->   [ %d , %d , %d , %u ]\n", loc.p_pos->x, loc.p_pos->y, loc.p_pos->z,
-                      loc.p_pos->qf);
+            HAL_Print("\t[X , Y , Z , Q]  -->   [ %d , %d , %d , %u ]\n", loc.p_pos->x, loc.p_pos->y, loc.p_pos->z, loc.p_pos->qf);
+            char send_message[100];
+            sprintf(send_message, " \t[X , Y , Z , Q]  --> [ %d , %d , %d , %u ]\n", loc.p_pos->x, loc.p_pos->y, loc.p_pos->z, loc.p_pos->qf);
+            tcp_connect(send_message);
 
             for (i = 0; i < loc.anchors.dist.cnt; ++i) {
                 HAL_Print("\t%u)", i);
                 HAL_Print("0x%llx", loc.anchors.dist.addr[i]);
-                if (i < loc.anchors.an_pos.cnt) {
-                    int x_pos = loc.anchors.an_pos.pos[i].x;
-                    int y_pos = loc.anchors.an_pos.pos[i].y;
-                    int z_pos = loc.anchors.an_pos.pos[i].z;
-                    int quality_factor = loc.anchors.an_pos.pos[i].qf;
-
-                    char send_message[100];
-                    sprintf(send_message, " [X , Y , Z , Q]  -->  [%d , %d , %d , %d]", x_pos, y_pos,z_pos,quality_factor);
-
-                    // Pass the correct message to the tcp_connect function
-                    tcp_connect(send_message);
-                }
-                HAL_Print("=%u,%u\n", loc.anchors.dist.dist[i], loc.anchors.dist.qf[i]);
+                HAL_Print("=%u,\n", loc.anchors.dist.dist[i]);
             }
         }
     }
