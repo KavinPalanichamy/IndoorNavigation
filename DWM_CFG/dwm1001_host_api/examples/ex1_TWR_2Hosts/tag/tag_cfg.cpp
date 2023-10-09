@@ -24,25 +24,12 @@ int tcp_connect(const char* message) {
         close(clientSocket);
         return 1;
     }
-
-    std::cout << "Hello" << std::endl;
-
+   
     if (send(clientSocket, message, strlen(message), 0) == -1) {
         perror("Error sending data to the server");
         close(clientSocket);
         return 1;
     }
-
-    char buffer[1024];
-    int bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0);
-    if (bytesRead == -1) {
-        perror("Error receiving data from the server");
-        close(clientSocket);
-        return 1;
-    }
-    buffer[bytesRead] = '\0';
-
-    std::cout << "Received from server: " << buffer << std::endl;
 
     close(clientSocket);
 
@@ -103,11 +90,8 @@ int main(void) {
         HAL_Print("dwm_loc_get(&loc):\n");
 
         if (dwm_loc_get(&loc) == RV_OK) {
-            HAL_Print("\t[%d,%d,%d,%u]\n", loc.p_pos->x, loc.p_pos->y, loc.p_pos->z,
+            HAL_Print("\t[ X , Y , Z , Q ]  -->   [ %d , %d , %d , %u ]\n", loc.p_pos->x, loc.p_pos->y, loc.p_pos->z,
                       loc.p_pos->qf);
-            HAL_Print("WAS THE TAG UP THERE\n\n\n");
-            char sample[100] = "Peace at last";
-            tcp_connect(sample);
 
             for (i = 0; i < loc.anchors.dist.cnt; ++i) {
                 HAL_Print("\t%u)", i);
@@ -115,10 +99,11 @@ int main(void) {
                 if (i < loc.anchors.an_pos.cnt) {
                     int x_pos = loc.anchors.an_pos.pos[i].x;
                     int y_pos = loc.anchors.an_pos.pos[i].y;
+                    int z_pos = loc.anchors.an_pos.pos[i].z;
+                    int quality_factor = loc.anchors.an_pos.pos[i].qf;
 
-                    // Corrected the syntax error in the previous version
                     char send_message[100];
-                    sprintf(send_message, "X_Pos : %d , Y_Pos = %d", x_pos, y_pos);
+                    sprintf(send_message, " X_Pos : %d \n Y_Pos = %d \n Z_Pos = %d \n Quality_Factor = %d\n", x_pos, y_pos,z_pos,quality_factor);
 
                     // Pass the correct message to the tcp_connect function
                     tcp_connect(send_message);
