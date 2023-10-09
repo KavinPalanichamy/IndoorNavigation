@@ -152,11 +152,11 @@ int dwm_cfg_get(dwm_cfg_t* cfg)
    LMH_Tx(tx_data, &tx_len);   
    if(LMH_WaitForRx(rx_data, &rx_len, 7) == RV_OK)
    {
-      cfg->mode                  = (rx_data[6]>>5) & 0x01;
+      cfg->mode = (dwm_mode_t)((rx_data[6] >> 5) & 0x01);
       cfg->initiator             = (rx_data[6]>>4) & 0x01;
       cfg->bridge                = (rx_data[6]>>3) & 0x01;
       cfg->accel_en              = (rx_data[6]>>2) & 0x01;
-      cfg->meas_mode             = (rx_data[6]>>0) & 0x03;
+      cfg->meas_mode = (dwm_meas_mode_t)((rx_data[6] >> 0) & 0x03);
       
       cfg->low_power_en          = (rx_data[5]>>7) & 0x01;
       cfg->loc_engine_en         = (rx_data[5]>>6) & 0x01;
@@ -164,7 +164,7 @@ int dwm_cfg_get(dwm_cfg_t* cfg)
       cfg->common.led_en         = (rx_data[5]>>4) & 0x01;
       cfg->common.ble_en         = (rx_data[5]>>3) & 0x01;
       cfg->common.fw_update_en   = (rx_data[5]>>2) & 0x01;
-      cfg->common.uwb_mode       = (rx_data[5]>>0) & 0x03;
+      cfg->common.uwb_mode = (dwm_uwb_mode_t)((rx_data[5] >> 0) & 0x03);
       return RV_OK;
    }   
    return RV_ERR;

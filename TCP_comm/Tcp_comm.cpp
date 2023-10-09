@@ -4,7 +4,8 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 
-int main() {
+
+int tcp_connection(char* message) {
 
     int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
     if (clientSocket == -1) {
@@ -24,7 +25,6 @@ int main() {
 
     std::cout<<"Hello";
     
-    const char* message = "Hello, Server!";
     if (send(clientSocket, message, strlen(message), 0) == -1) {
         perror("Error sending data to the server");
         close(clientSocket);

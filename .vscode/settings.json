@@ -1,3 +1,6 @@
 {
-    "cmake.sourceDirectory": "/home/rafal/Desktop/2023_DEV/TCP_comm"
+    "cmake.sourceDirectory": "/home/rafal/Desktop/2023_DEV/TCP_comm",
+    "files.associations": {
+        "tcp_connect.h": "c"
+    }
 }
