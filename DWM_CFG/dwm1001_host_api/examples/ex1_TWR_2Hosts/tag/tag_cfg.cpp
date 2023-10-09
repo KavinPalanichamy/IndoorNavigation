@@ -37,6 +37,8 @@ int tcp_connect(const char* message) {
 }
 
 int main(void) {
+
+    //Init. Tag
     int i;
     int wait_period = 1000;
     dwm_cfg_tag_t cfg_tag;
@@ -78,8 +80,10 @@ int main(void) {
         HAL_Print("\nConfiguration failed.\n\n");
     } else {
         HAL_Print("\nConfiguration succeeded.\n\n");
-    }
+    }//End of Init. Tag
 
+    
+    //Successively receive Location in regular intervals
     dwm_loc_data_t loc;
     dwm_pos_t pos;
     loc.p_pos = &pos;
@@ -90,7 +94,7 @@ int main(void) {
         HAL_Print("dwm_loc_get(&loc):\n");
 
         if (dwm_loc_get(&loc) == RV_OK) {
-            HAL_Print("\t[ X , Y , Z , Q ]  -->   [ %d , %d , %d , %u ]\n", loc.p_pos->x, loc.p_pos->y, loc.p_pos->z,
+            HAL_Print("\t[X , Y , Z , Q]  -->   [ %d , %d , %d , %u ]\n", loc.p_pos->x, loc.p_pos->y, loc.p_pos->z,
                       loc.p_pos->qf);
 
             for (i = 0; i < loc.anchors.dist.cnt; ++i) {
@@ -103,7 +107,7 @@ int main(void) {
                     int quality_factor = loc.anchors.an_pos.pos[i].qf;
 
                     char send_message[100];
-                    sprintf(send_message, " X_Pos : %d \n Y_Pos = %d \n Z_Pos = %d \n Quality_Factor = %d\n", x_pos, y_pos,z_pos,quality_factor);
+                    sprintf(send_message, " [X , Y , Z , Q]  -->  [%d , %d , %d , %d]", x_pos, y_pos,z_pos,quality_factor);
 
                     // Pass the correct message to the tcp_connect function
                     tcp_connect(send_message);
