@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <math.h>
 #include "dwm_api.h"
 #include "hal.h"
 
@@ -39,6 +40,12 @@ int tcp_connect(const char* message) {
 
 int gps_receive(){
 
+}
+
+int global_coordinate_config(float theta, float x_local,float y_local, float x_initiator, float y_initiator){
+    float x_global , y_global ;
+    x_global = (x_local * cos(theta)) - (y_local * sin(theta));
+    y_global = (x_local * sin(theta)) + (y_local * cos(theta));
 
 }
 
