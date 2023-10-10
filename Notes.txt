@@ -1,7 +1,42 @@
-1> Setting up the hardware 
+1> Setting up Raspi
 
 	1.1> Setup the raspi and establish ssh with a host system
 	1.2> Password for raspi's : user 
-	1.3> 
+	1.3> To find the IP of raspi ( it is not static and might have changed when connected to a different network)
 
-2> 
+2> Setting up Quorvo modules
+
+	2.1> Make sure the pins are in contact 
+	2.2>The Power led and other indicators might be functioning but the SPI / UART pins can be not in contact 
+	2.3> Hence make sure all the pins are in proper contact and use a header if possible 
+	2.4> All the modules are flashed with the proper firmare
+	2.5> Blinking led lights indicate the Module is actively looking for connectins
+
+3> Communication between Raspi and Quorvo
+
+	3.1> Use SPI (Had some trouble with UART and didnt manage to establish a comm. via UART)
+	3.2>Make sure to check the connection type in Makefile 
+
+4> Setting up the anchors
+
+	4.1> Use the anc_cfg to init and configure the anchors 
+	4.2> Initiator position ( 0 , 0 ,0 )
+	2.2> Required parameters : Initializor = 1 / 0 and the position of the anchor with respect to initiator 
+
+5> Code Development
+
+	5.1> Visual Studio preferres
+	5.2> Use remote explorer to connect with raspi. 
+	5.3> This setup is useful because debugging can be done on host machine while compilation on raspi
+	5.4> arm-linux-...-gcc toolchain as default in dwm_1001 Makefile
+	5.5> Change it to arm....-g++ in case of C++ compilation is required
+
+
+6> TCP Broadcast of data 
+
+	6.1> One way communication (Client - Raspi , Server - Hand Console)
+	6.2> Client pushes the data to TCP socket, no received acknowledment message needed from Server
+
+
+
+

@@ -25,6 +25,7 @@ int tcp_connect(const char* message) {
         return 1;
     }
    
+
     if (send(clientSocket, message, strlen(message), 0) == -1) {
         perror("Error sending data to the server");
         close(clientSocket);
@@ -34,6 +35,11 @@ int tcp_connect(const char* message) {
     close(clientSocket);
 
     return 0;
+}
+
+int gps_receive(){
+
+
 }
 
 int main(void) {
