@@ -25,7 +25,6 @@ int tcp_connect(const char* message) {
         close(clientSocket);
         return 1;
     }
-   
 
     if (send(clientSocket, message, strlen(message), 0) == -1) {
         perror("Error sending data to the server");
@@ -95,7 +94,7 @@ int main(void) {
         HAL_Print("\nConfiguration succeeded.\n\n");
     }//End of Init. Tag
 
-    
+
     //Successively receive Location in regular intervals
     dwm_loc_data_t loc;
     dwm_pos_t pos;
