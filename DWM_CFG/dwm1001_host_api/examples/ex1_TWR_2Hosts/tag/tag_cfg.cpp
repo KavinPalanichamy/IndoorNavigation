@@ -9,6 +9,7 @@
 #include <iomanip>
 #include <cmath>
 #include <ctime>
+#include <fstream>
 
 //------------------Structure Definitions and Initialization ------------
 
@@ -33,7 +34,7 @@ struct Local_Coordinate {
     Local_Coordinate(double x, double y, double z): x_loc(x) , y_loc(y),z_loc(z){}
 };
 
-Local_Coordinate UV_local(2,2,0);
+
 
 // ---------------------------------------------------------------------------
 
@@ -104,6 +105,22 @@ for (char c : ggaMessage) {
 
     return ggaString.str();
 }
+
+
+void writeToNotepad( const std::string& data) {
+    const std::string& fileName = "/home/user/Documents/gnss_feed.txt";
+    std::ofstream file(fileName, std::ios_base::app); // Open the file in append mode
+    if (!file) {
+        std::cerr << "Error opening the file!" << std::endl;
+        return;
+    }
+
+    file << data << std::endl; // Writing with a newline character
+    file.close();
+}
+
+
+
 
 
 /* !
@@ -263,7 +280,7 @@ int main(void) {
     dwm_loc_data_t loc;
     dwm_pos_t pos;
     loc.p_pos = &pos;
-
+    Local_Coordinate UV_local(0,77.30,0);
     while (1) {
         HAL_Print("Wait %d ms...\n", wait_period);
         HAL_Delay(wait_period);
@@ -275,7 +292,7 @@ int main(void) {
             UV_local.y_loc = (loc.p_pos->y)/1000;
             UV_local.z_loc=(loc.p_pos->z)/1000;
         }
-
+    
     Geodetic_Coordinate anchor_origin(52.1937073, 20.9211908, 0,0); 
     Geodetic_Coordinate destination = local2geodetic(anchor_origin, UV_local);
 
@@ -293,9 +310,11 @@ int main(void) {
     char charArray[send_NMEA_String.length() + 1]; // +1 for the null-terminator
     strcpy(charArray, send_NMEA_String.c_str());
     std::cout<<charArray;
+    writeToNotepad(send_NMEA_String);
     
 
     //tcp_connect(charArray);
 
     }
-}
+    }
+
