@@ -8,6 +8,7 @@
 #include "hal.h"
 #include <iomanip>
 #include <cmath>
+#include <ctime>
 
 //------------------Structure Definitions and Initialization ------------
 
@@ -34,6 +35,69 @@ struct Local_Coordinate {
 
 // ---------------------------------------------------------------------------
 
+std::string createNMEA_Message(Geodetic_Coordinate SendPosition) {
+    std::string time = "142710.80";
+    double latitude = SendPosition.Latitude;
+    double longitude = SendPosition.Longitude;
+    char latitudeDirection = 'N';
+    char longitudeDirection = 'E';
+    int fixQuality = 2;
+    int numSatellites = 11;
+    double hdop = 1.40;
+    double altitude = 83.2;
+    char altitudeUnit = 'M';
+    double geoidSeparation = 34.4;
+    char geoidUnit = 'M';
+    double ageOfDGPS = 0.7;
+    int referenceStationID = 0;
+
+    //Systemtime
+
+   std::time_t now = std::time(nullptr);
+    struct tm* timeinfo = std::localtime(&now);
+    int hours = timeinfo->tm_hour;
+    int minutes = timeinfo->tm_min;
+    int seconds = timeinfo->tm_sec;
+    int tenths = (std::clock() * 10 / CLOCKS_PER_SEC) % 10;
+
+    std::cout << std::setfill('0') << std::setw(2) << hours
+              << std::setw(2) << minutes
+              << std::setw(2) << seconds
+              << "." << tenths << std::endl;
+
+    // Create the string
+    std::ostringstream ggaString;
+    ggaString << "$GNGGA," << time << ",";
+    ggaString << std::fixed << std::setprecision(5) << latitude << "," << latitudeDirection << ",";
+    ggaString << std::fixed << std::setprecision(5) << "0"<<longitude << "," << longitudeDirection << ",";
+    ggaString << fixQuality << "," << numSatellites << "," << std::fixed << std::setprecision(2) << hdop << ",";
+    ggaString << std::fixed << std::setprecision(1) << altitude << "," << altitudeUnit << ",";
+    ggaString << std::fixed << std::setprecision(1) << geoidSeparation << "," << geoidUnit << ",";
+    ggaString << std::fixed << std::setprecision(1) << ageOfDGPS << "," << std::setw(4) << std::setfill('0') << referenceStationID;
+
+    // Calculate the NMEA checksum
+    std::string ggaMessage = ggaString.str();
+int checksum = 0;
+bool skipChecksumCalculation = true; // Flag to skip checksum calculation until '$' is encountered
+
+for (char c : ggaMessage) {
+    if (c == '$') {
+        skipChecksumCalculation = false;
+        continue;
+    }
+    
+    if (!skipChecksumCalculation) {
+        checksum ^= c;
+    }
+}
+    // Add the checksum and terminate the NMEA message
+    ggaString << "*" << std::hex << std::setw(2) << std::setfill('0') << checksum;
+    ggaString << "\r\n";
+
+    return ggaString.str();
+}
+
+
 /* !
 
 * @function               local2geodetic
@@ -46,20 +110,23 @@ struct Local_Coordinate {
 
 
 Geodetic_Coordinate local2geodetic(Geodetic_Coordinate anchor_origin, Local_Coordinate UV_local ) {
-  
-    double total_bearing;
-
-    //Finding the total_bearing and the displacement of the mobile robot 
-    double local_bearing = atan2(UV_local.x_loc,UV_local.y_loc);
-    double displacement_from_origin = sqrt((UV_local.x_loc * UV_local.x_loc)+(UV_local.y_loc * UV_local.y_loc));
-    total_bearing = local_bearing + anchor_origin.bearing;
-
 
     //Mathmetical constants 
     const double DegreesToRadians = M_PI / 180;
     const double RadiansToDegrees = 180/ M_PI;
     const double EarthRadius = 6378160;  // Earth's radius in meters
     const double TwoPi = 2.0 * M_PI;
+
+  
+    double total_bearing;
+
+    //Finding the total_bearing and the displacement of the mobile robot 
+    double local_bearing = atan2(UV_local.y_loc,UV_local.x_loc);
+    double displacement_from_origin = sqrt((UV_local.x_loc * UV_local.x_loc)+(UV_local.y_loc * UV_local.y_loc));
+    total_bearing = ((local_bearing)*RadiansToDegrees + anchor_origin.bearing+270);
+
+    std::cout<<total_bearing;
+
 
     //Degrees to Radians 
     double latA = anchor_origin.Latitude * DegreesToRadians;
@@ -106,8 +173,8 @@ int tcp_connect(const char* message) {
 
     struct sockaddr_in serverAddress;
     serverAddress.sin_family = AF_INET;
-    serverAddress.sin_port = htons(4568);
-    serverAddress.sin_addr.s_addr = inet_addr("10.2.1.223");
+    serverAddress.sin_port = htons(6100);
+    serverAddress.sin_addr.s_addr = inet_addr("192.168.15.145");
 
     if (connect(clientSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) == -1) {
         perror("Error connecting to the server");
@@ -126,12 +193,25 @@ int tcp_connect(const char* message) {
     return 0;
 }
 
+double type_converter(double input ) {
+    // Extract digits before and after the decimal point
+    int digits_before_decimal = static_cast<int>(input);
+    double digits_after_decimal = input - digits_before_decimal;
+    
+    // Multiply digits before the decimal by 100 and add digits after the decimal
+    double result = (digits_before_decimal * 100) + (digits_after_decimal * 60);
+    
+    
+
+    return result;
+}
+
 
 
 int main(void) {
 
     //Init. Tag
-    int i;
+    /*int i;
     int wait_period = 1000;
     dwm_cfg_tag_t cfg_tag;
     dwm_cfg_t cfg_node;
@@ -175,6 +255,7 @@ int main(void) {
     }//End of Init. Tag
 
 
+
     //Successively receive Location in regular intervals
     dwm_loc_data_t loc;
     dwm_pos_t pos;
@@ -199,10 +280,10 @@ int main(void) {
         }
     }
 
-
-    Geodetic_Coordinate anchor_origin(38.031389, 119.354785, 0,0); 
-    Local_Coordinate UV_local(150,4800,0);
-    double displacement_from_origin = 2860.358458; 
+*/
+    Geodetic_Coordinate anchor_origin(52.1937073, 20.9211908, 0,0); 
+    Local_Coordinate UV_local(5,2,0);
+    
     
 
     Geodetic_Coordinate destination = local2geodetic(anchor_origin, UV_local);
@@ -211,6 +292,18 @@ int main(void) {
     std::cout << std::fixed << std::setprecision(9);
 
     std::cout << "Destination: Latitude " << destination.Latitude << ", Longitude " << destination.Longitude << ", Altitude " << destination.Altitude << std::endl;
+
+    destination.Latitude = type_converter(destination.Latitude);
+    destination.Longitude = type_converter(destination.Longitude);
+   
+    std::string send_NMEA_String = createNMEA_Message(destination);
+
+    //Type conversion for sending via TCP
+    char charArray[send_NMEA_String.length() + 1]; // +1 for the null-terminator
+    strcpy(charArray, send_NMEA_String.c_str());
+    std::cout<<charArray;
+
+    //tcp_connect(charArray);
 
 
     return 0;
