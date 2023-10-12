@@ -48,6 +48,8 @@ int global_coordinate_config(float theta, float x_local,float y_local, float x_i
 
 }
 
+
+
 int main(void) {
 
     //Init. Tag
