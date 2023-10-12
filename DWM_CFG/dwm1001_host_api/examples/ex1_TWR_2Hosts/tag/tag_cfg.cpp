@@ -108,14 +108,14 @@ for (char c : ggaMessage) {
 
 
 void writeToNotepad( const std::string& data) {
-    const std::string& fileName = "/home/user/Documents/gnss_feed.txt";
+    const std::string& fileName = "/home/rafal/Documents/gnss_feed.txt";
     std::ofstream file(fileName, std::ios_base::app); // Open the file in append mode
     if (!file) {
         std::cerr << "Error opening the file!" << std::endl;
         return;
     }
 
-    file << data << std::endl; // Writing with a newline character
+    file << data; // Writing with a newline character
     file.close();
 }
 
