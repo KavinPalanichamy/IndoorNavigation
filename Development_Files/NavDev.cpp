@@ -55,6 +55,7 @@ Geodetic_Coordinate local2geodetic(Geodetic_Coordinate anchor_origin, Local_Coor
     
         y = arcsin((sin(y0) * cos(d/r)) + (cos(y0) * sin(d/r) * cos(theta)))
         x = x0 + arctan2((sin(theta) * sin(d/r) * cos(y0)), (cos(d/r) - (sin(y0) * sin(y))))
+        
         where `x0` and `y0` are the initial coordinates, `d` is the distance traveled, `r` is the radius of the  Earth), 
         theta is the total_bearing, and `x` and `y` are the new coordinates  */
 
