@@ -33,10 +33,29 @@ struct Local_Coordinate {
     Local_Coordinate(double x, double y, double z): x_loc(x) , y_loc(y),z_loc(z){}
 };
 
+Local_Coordinate UV_local(2,2,0);
+
 // ---------------------------------------------------------------------------
 
 std::string createNMEA_Message(Geodetic_Coordinate SendPosition) {
-    std::string time = "142710.80";
+
+    //Systemtime
+
+   std::time_t now = std::time(nullptr);
+    struct tm* timeinfo = std::localtime(&now);
+    int hours = timeinfo->tm_hour;
+    int minutes = timeinfo->tm_min;
+    int seconds = timeinfo->tm_sec;
+    int tenths = (std::clock() * 10 / CLOCKS_PER_SEC) % 10;
+    std::string formatted_time = 
+        (hours < 10 ? "0" : "") + std::to_string(hours) +
+        (minutes < 10 ? "0" : "") + std::to_string(minutes) +
+        (seconds < 10 ? "0" : "") + std::to_string(seconds) + "."+
+        (tenths< 10 ? "0" : "") + std::to_string(tenths);
+    std::string time = formatted_time;
+
+    //Variable required for NMEA
+
     double latitude = SendPosition.Latitude;
     double longitude = SendPosition.Longitude;
     char latitudeDirection = 'N';
@@ -51,21 +70,10 @@ std::string createNMEA_Message(Geodetic_Coordinate SendPosition) {
     double ageOfDGPS = 0.7;
     int referenceStationID = 0;
 
-    //Systemtime
+    
 
-   std::time_t now = std::time(nullptr);
-    struct tm* timeinfo = std::localtime(&now);
-    int hours = timeinfo->tm_hour;
-    int minutes = timeinfo->tm_min;
-    int seconds = timeinfo->tm_sec;
-    int tenths = (std::clock() * 10 / CLOCKS_PER_SEC) % 10;
+    // Create NMEA string
 
-    std::cout << std::setfill('0') << std::setw(2) << hours
-              << std::setw(2) << minutes
-              << std::setw(2) << seconds
-              << "." << tenths << std::endl;
-
-    // Create the string
     std::ostringstream ggaString;
     ggaString << "$GNGGA," << time << ",";
     ggaString << std::fixed << std::setprecision(5) << latitude << "," << latitudeDirection << ",";
@@ -124,9 +132,6 @@ Geodetic_Coordinate local2geodetic(Geodetic_Coordinate anchor_origin, Local_Coor
     double local_bearing = atan2(UV_local.y_loc,UV_local.x_loc);
     double displacement_from_origin = sqrt((UV_local.x_loc * UV_local.x_loc)+(UV_local.y_loc * UV_local.y_loc));
     total_bearing = ((local_bearing)*RadiansToDegrees + anchor_origin.bearing+270);
-
-    std::cout<<total_bearing;
-
 
     //Degrees to Radians 
     double latA = anchor_origin.Latitude * DegreesToRadians;
@@ -211,7 +216,6 @@ double type_converter(double input ) {
 int main(void) {
 
     //Init. Tag
-    /*int i;
     int wait_period = 1000;
     dwm_cfg_tag_t cfg_tag;
     dwm_cfg_t cfg_node;
@@ -252,14 +256,14 @@ int main(void) {
         HAL_Print("\nConfiguration failed.\n\n");
     } else {
         HAL_Print("\nConfiguration succeeded.\n\n");
-    }//End of Init. Tag
+    }
+    //End of tag Initialization
 
-
-
-    //Successively receive Location in regular intervals
+    //Successively receive Location in regular intervals ( 1s )
     dwm_loc_data_t loc;
     dwm_pos_t pos;
     loc.p_pos = &pos;
+
     while (1) {
         HAL_Print("Wait %d ms...\n", wait_period);
         HAL_Delay(wait_period);
@@ -267,31 +271,18 @@ int main(void) {
         HAL_Print("dwm_loc_get(&loc):\n");
 
         if (dwm_loc_get(&loc) == RV_OK) {
-            HAL_Print("\t[X , Y , Z , Q]  -->   [ %d , %d , %d , %u ]\n", loc.p_pos->x, loc.p_pos->y, loc.p_pos->z, loc.p_pos->qf);
-            char send_message[100];
-            sprintf(send_message, " \t[X , Y , Z , Q]  --> [ %d , %d , %d , %u ]\n", loc.p_pos->x, loc.p_pos->y, loc.p_pos->z, loc.p_pos->qf);
-            tcp_connect(send_message);
-
-            for (i = 0; i < loc.anchors.dist.cnt; ++i) {
-                HAL_Print("\t%u)", i);
-                HAL_Print("0x%llx", loc.anchors.dist.addr[i]);
-                HAL_Print("=%u,\n", loc.anchors.dist.dist[i]);
-            }
+            UV_local.x_loc = (loc.p_pos->x)/1000;
+            UV_local.y_loc = (loc.p_pos->y)/1000;
+            UV_local.z_loc=(loc.p_pos->z)/1000;
         }
-    }
 
-*/
     Geodetic_Coordinate anchor_origin(52.1937073, 20.9211908, 0,0); 
-    Local_Coordinate UV_local(5,2,0);
-    
-    
-
     Geodetic_Coordinate destination = local2geodetic(anchor_origin, UV_local);
 
     // Set the precision for output
     std::cout << std::fixed << std::setprecision(9);
 
-    std::cout << "Destination: Latitude " << destination.Latitude << ", Longitude " << destination.Longitude << ", Altitude " << destination.Altitude << std::endl;
+    //std::cout << "Destination: Latitude " << destination.Latitude << ", Longitude " << destination.Longitude << ", Altitude " << destination.Altitude << std::endl;
 
     destination.Latitude = type_converter(destination.Latitude);
     destination.Longitude = type_converter(destination.Longitude);
@@ -302,9 +293,9 @@ int main(void) {
     char charArray[send_NMEA_String.length() + 1]; // +1 for the null-terminator
     strcpy(charArray, send_NMEA_String.c_str());
     std::cout<<charArray;
+    
 
     //tcp_connect(charArray);
 
-
-    return 0;
+    }
 }
