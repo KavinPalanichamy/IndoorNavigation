@@ -47,7 +47,7 @@ struct Local_Coordinate {
 
 std::string createNMEA_Message(Geodetic_Coordinate SendPosition) {
 
-    //Systemtime
+    //Systemtime in hhmmss.ss format
 
    std::time_t now = std::time(nullptr);
     struct tm* timeinfo = std::localtime(&now);
@@ -77,8 +77,6 @@ std::string createNMEA_Message(Geodetic_Coordinate SendPosition) {
     char geoidUnit = 'M';
     double ageOfDGPS = 0.7;
     int referenceStationID = 0;
-
-    
 
     // Create NMEA string
 
@@ -114,7 +112,6 @@ for (char c : ggaMessage) {
     return ggaString.str();
 }
 
-
 /**
  * @brief   writes the input parameter in the next line of a word file
  * @param   String data refernecer
@@ -133,15 +130,12 @@ void writeToNotepad( const std::string& data) {
     file.close();
 }
 
-
-
 /** !
 * @brief                 Converts local coordinates to global geodetic coordinates 
 * @param                 Geodetic_Coordinate Structure, Local_Coordinate structure 
 * @result                The new global Geodetic_coordinate representing the new position of the Mobile robot
 
 */
-
 
 Geodetic_Coordinate local2geodetic(Geodetic_Coordinate anchor_origin, Local_Coordinate UV_local ) {
 
