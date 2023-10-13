@@ -22,7 +22,7 @@ TARGET = 0
 #  0: USE_UART  
 #  1: USE_SPI    
 #  2: USE_SPI_DRDY
-INTERFACE_NUMBER = 0
+INTERFACE_NUMBER = 1
 
 ####################################################
 #  PRINT_LVL 
@@ -33,9 +33,6 @@ INTERFACE_NUMBER = 0
 #  3:    printf + fprintf    
 PRINT_LVL = 3
 
-
-####################################################
-#  main
 
 PROGRAM = anchor_cfg
 SOURCES = anchor_cfg.c

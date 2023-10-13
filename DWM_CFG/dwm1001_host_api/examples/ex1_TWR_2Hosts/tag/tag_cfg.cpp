@@ -35,8 +35,9 @@ struct Local_Coordinate {
   
 
     Local_Coordinate(double x, double y, double z): x_loc(x) , y_loc(y),z_loc(z){}
+   
 };
-
+int tag_cfg_flag =0;
 
 
 /**
@@ -158,7 +159,7 @@ for (char c : rmcMessage) {
  * @result  The input string is written in the woed file at the predefined path
 */
 
-void writeToNotepad( const std::string& data) {
+void writeToTextFile( const std::string& data) {
     const std::string& fileName = "/home/rafal/Documents/gnss_feed.txt";
     std::ofstream file(fileName, std::ios_base::app); // Open the file in append mode
     if (!file) {
@@ -247,14 +248,15 @@ int tcp_connect(const char* message) {
         close(clientSocket);
         return 1;
     }
+    std::cout<<"Connected\n";
 
     if (send(clientSocket, message, strlen(message), 0) == -1) {
         perror("Error sending data to the server");
         close(clientSocket);
         return 1;
     }
+    std::cout<<"Sent";
 
-    close(clientSocket);
 
     return 0;
 }
@@ -322,64 +324,74 @@ int tag_cfg(void) {
         return 0 ;
 
     } else {
+        tag_cfg_flag=1;
+        std::cout<<tag_cfg_flag;
         HAL_Print("\nConfiguration succeeded.\n\n");
-        return 1 ;
+        return 0 ;
     }
 }
 
 
 int main(){
 
-    int tag_cfg_flag =1;
+    
+    tag_cfg();
 
-    if (tag_cfg_flag==1){
+    while (1){
 
-        /*int wait_period = 1000;
-        //Successively receive Location in regular intervals ( 1s )
-        dwm_loc_data_t loc;
-        dwm_pos_t pos;
-        loc.p_pos = &pos;*/
+        if (tag_cfg_flag==1){
 
-        Local_Coordinate UV_local(0,0,0);
-        Geodetic_Coordinate anchor_origin(52.1937073, 20.9211908, 0,0); 
+            int wait_period = 1000;
+            //Successively receive Location in regular intervals ( 1s )
+            dwm_loc_data_t loc;
+            dwm_pos_t pos;
+            loc.p_pos = &pos;
 
-        /*while (1) {
+            Local_Coordinate UV_local(0,0,0);
+            Geodetic_Coordinate anchor_origin(52.1937073, 20.9211908, 0,0); 
+
             HAL_Print("Wait %d ms...\n", wait_period);
-            HAL_Delay(wait_period);
+           
 
             HAL_Print("dwm_loc_get(&loc):\n");
 
             if (dwm_loc_get(&loc) == RV_OK) {
-                UV_local.x_loc = (loc.p_pos->x)/1000;
-                UV_local.y_loc = (loc.p_pos->y)/1000;
-                UV_local.z_loc=(loc.p_pos->z)/1000;
-        }*/
+                UV_local.x_loc = (loc.p_pos->x)/1000.0000;
+                UV_local.y_loc = (loc.p_pos->y)/1000.0000;
+                UV_local.z_loc=(loc.p_pos->z)/1000.0000;
+            
+                std::cout<<UV_local.x_loc<<"  "<<UV_local.y_loc<<"   "<<UV_local.z_loc;
+                
 
-        //Calulate the new coordinates to NMEA format 
-        Geodetic_Coordinate destination = local2geodetic(anchor_origin, UV_local);
+                //Calulate the new coordinates to NMEA format 
+                Geodetic_Coordinate destination = local2geodetic(anchor_origin, UV_local);
 
-        //Convert Coordinates to NMEA format (ddmm.mmmmm)
-        destination.Latitude = type_converter(destination.Latitude);
-        destination.Longitude = type_converter(destination.Longitude);
-    
-        //Generate NMEA string 
-        std::string send_NMEA_String = createNMEA_Message(destination);
+                //Convert Coordinates to NMEA format (ddmm.mmmmm)
+                destination.Latitude = type_converter(destination.Latitude);
+                destination.Longitude = type_converter(destination.Longitude);
+            
+                //Generate NMEA string 
+                std::string send_NMEA_String = createNMEA_Message(destination);
 
-        //Type conversion for sending via TCP
-        char charArray[send_NMEA_String.length() + 1]; 
-        strcpy(charArray, send_NMEA_String.c_str());
+                //Type conversion for sending via TCP
+                char charArray[send_NMEA_String.length() + 1]; 
+                strcpy(charArray, send_NMEA_String.c_str());
 
-        std::cout<<charArray;
-        
-        //Write NMEA string to the text file 
-        //writeToNotepad(send_NMEA_String);
-        
-        //Send NMEA string to the server via TCP
-        //tcp_connect(charArray);
+                std::cout<<charArray;
+                
+                //Write NMEA string to the text file 
+                writeToTextFile(send_NMEA_String);
+                
+                //Send NMEA string to the server via TCP
+                tcp_connect(charArray);
+            
+            }
 
-         
+        }
 
     }
+
+
 }
 
     
