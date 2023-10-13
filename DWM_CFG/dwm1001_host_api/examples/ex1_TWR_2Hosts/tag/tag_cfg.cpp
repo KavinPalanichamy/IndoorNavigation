@@ -78,6 +78,14 @@ std::string createNMEA_Message(Geodetic_Coordinate SendPosition) {
     double ageOfDGPS = 0.7;
     int referenceStationID = 0;
 
+    char rmc_status = 'A';
+    double rmc_speed = 0.500;
+    double rmc_course = 0;
+    int rmc_date = 131023;
+    double rmc_magnetic_variation = 0;
+    char rmc_mode = 'V';
+
+
     // Create NMEA string
 
     std::ostringstream ggaString;
@@ -89,11 +97,23 @@ std::string createNMEA_Message(Geodetic_Coordinate SendPosition) {
     ggaString << std::fixed << std::setprecision(1) << geoidSeparation << "," << geoidUnit << ",";
     ggaString << std::fixed << std::setprecision(1) << ageOfDGPS << "," << std::setw(4) << std::setfill('0') << referenceStationID;
 
-    // Calculate the NMEA checksum ignoring the $ in the start
+    // Calculate the NMEA ggaChecksum ignoring the $ in the start
+
+    std::ostringstream rmcString;
+    rmcString << "$GNRMC," << time << ","<<rmc_status<<",";
+    rmcString << std::fixed << std::setprecision(5) << latitude << "," << latitudeDirection << ",";
+    rmcString << std::fixed << std::setprecision(5) << "0"<<longitude << "," << longitudeDirection << ","<<std::setprecision(3);
+    rmcString <<rmc_speed<<",,"<<rmc_date<<",,,"<<"D,"<<rmc_mode;
+
+   
 
     std::string ggaMessage = ggaString.str();
-int checksum = 0;
-bool skipChecksumCalculation = true; // Flag to skip checksum calculation until '$' is encountered
+    std::string rmcMessage = rmcString.str();
+
+int ggaChecksum = 0;
+int rmcChecksum = 0;
+
+bool skipChecksumCalculation = true; // Flag to skip ggaChecksum calculation until '$' is encountered
 
 for (char c : ggaMessage) {
     if (c == '$') {
@@ -102,14 +122,34 @@ for (char c : ggaMessage) {
     }
     
     if (!skipChecksumCalculation) {
-        checksum ^= c;
+        ggaChecksum ^= c;
     }
 }
-    // Add the checksum and terminate the NMEA message
-    ggaString << "*" << std::hex << std::setw(2) << std::setfill('0') << checksum;
+
+skipChecksumCalculation = true;
+
+for (char c : rmcMessage) {
+    if (c == '$') {
+        skipChecksumCalculation = false;
+        continue;
+    }
+    
+    if (!skipChecksumCalculation) {
+        rmcChecksum ^= c;
+    }
+}
+    // Add the ggaChecksum and terminate the NMEA message
+    ggaString << "*" << std::hex << std::setw(2) << std::setfill('0') << ggaChecksum;
     ggaString << "\r\n";
 
-    return ggaString.str();
+    rmcString << "*" << std::hex << std::setw(2) << std::setfill('0') << rmcChecksum;
+    rmcString << "\r\n";
+
+    rmcString<<ggaString.str();
+
+    std::string return_message = rmcString.str();
+
+    return return_message;
 }
 
 /**
@@ -300,7 +340,7 @@ int main(){
         dwm_pos_t pos;
         loc.p_pos = &pos;*/
 
-        Local_Coordinate UV_local(0,77.30,0);
+        Local_Coordinate UV_local(0,0,0);
         Geodetic_Coordinate anchor_origin(52.1937073, 20.9211908, 0,0); 
 
         /*while (1) {
