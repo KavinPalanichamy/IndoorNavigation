@@ -296,15 +296,19 @@ int tag_cfg(void) {
 
 int main(){
 
-    if (tag_cfg()==1){
+    int tag_cfg_flag =1;
 
-        int wait_period = 1000;
+    if (tag_cfg_flag==1){
+
+        /*int wait_period = 1000;
         //Successively receive Location in regular intervals ( 1s )
         dwm_loc_data_t loc;
         dwm_pos_t pos;
-        loc.p_pos = &pos;
+        loc.p_pos = &pos;*/
+
         Local_Coordinate UV_local(0,77.30,0);
         Geodetic_Coordinate anchor_origin(52.1937073, 20.9211908, 0,0); 
+
         /*while (1) {
             HAL_Print("Wait %d ms...\n", wait_period);
             HAL_Delay(wait_period);
