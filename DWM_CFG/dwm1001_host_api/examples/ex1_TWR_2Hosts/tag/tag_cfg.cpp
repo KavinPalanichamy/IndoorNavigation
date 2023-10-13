@@ -11,7 +11,10 @@
 #include <ctime>
 #include <fstream>
 
-//------------------Structure Definitions and Initialization ------------
+/** 
+ * @brief   Structure definitions
+ * 
+*/
 
 // Structure to represent Geodetic coordinate -->  latitude, longitude, and altitude (Degree,Degree,metres)
 struct Geodetic_Coordinate {
@@ -36,7 +39,11 @@ struct Local_Coordinate {
 
 
 
-// ---------------------------------------------------------------------------
+/**
+ * @brief   Creates a NMEA - GNGGA format message 
+ * @param   Geodetic_Coordinate type structure
+ * @result  NMEA String 
+*/
 
 std::string createNMEA_Message(Geodetic_Coordinate SendPosition) {
 
@@ -84,7 +91,8 @@ std::string createNMEA_Message(Geodetic_Coordinate SendPosition) {
     ggaString << std::fixed << std::setprecision(1) << geoidSeparation << "," << geoidUnit << ",";
     ggaString << std::fixed << std::setprecision(1) << ageOfDGPS << "," << std::setw(4) << std::setfill('0') << referenceStationID;
 
-    // Calculate the NMEA checksum
+    // Calculate the NMEA checksum ignoring the $ in the start
+
     std::string ggaMessage = ggaString.str();
 int checksum = 0;
 bool skipChecksumCalculation = true; // Flag to skip checksum calculation until '$' is encountered
@@ -107,6 +115,12 @@ for (char c : ggaMessage) {
 }
 
 
+/**
+ * @brief   writes the input parameter in the next line of a word file
+ * @param   String data refernecer
+ * @result  The input string is written in the woed file at the predefined path
+*/
+
 void writeToNotepad( const std::string& data) {
     const std::string& fileName = "/home/rafal/Documents/gnss_feed.txt";
     std::ofstream file(fileName, std::ios_base::app); // Open the file in append mode
@@ -121,17 +135,12 @@ void writeToNotepad( const std::string& data) {
 
 
 
-
-
-/* !
-
-* @function               local2geodetic
-* @description            Converts local coordinates to global geodetic coordinates 
-* @param                  Geodetic_Coordinate Structure, Local Coordinate structure 
-* @result                 The new global Geodetic_coordinate representing the new position of the Mobile robot
+/** !
+* @brief                 Converts local coordinates to global geodetic coordinates 
+* @param                 Geodetic_Coordinate Structure, Local_Coordinate structure 
+* @result                The new global Geodetic_coordinate representing the new position of the Mobile robot
 
 */
-// Function to calculate the end-point from a anchor_origin with a given displacement_from_origin and total_bearing
 
 
 Geodetic_Coordinate local2geodetic(Geodetic_Coordinate anchor_origin, Local_Coordinate UV_local ) {
@@ -159,11 +168,13 @@ Geodetic_Coordinate local2geodetic(Geodetic_Coordinate anchor_origin, Local_Coor
 
     /*   ----- Haversine ( Inverse ) formula  --------
     
-        y = arcsin((sin(y0) * cos(d/r)) + (cos(y0) * sin(d/r) * cos(theta)))
-        x = x0 + arctan2((sin(theta) * sin(d/r) * cos(y0)), (cos(d/r) - (sin(y0) * sin(y))))
+        ->    y = arcsin((sin(y0) * cos(d/r)) + (cos(y0) * sin(d/r) * cos(theta)))
+        ->    x = x0 + arctan2((sin(theta) * sin(d/r) * cos(y0)), (cos(d/r) - (sin(y0) * sin(y))))
         
-        where `x0` and `y0` are the initial coordinates, `d` is the distance traveled, `r` is the radius of the  Earth), 
-        theta is the total_bearing, and `x` and `y` are the new coordinates  */
+        Where `x0` and `y0` are the initial coordinates, `d` is the distance traveled, `r` is the radius of the  Earth), 
+        theta is the total_bearing, and `x` and `y` are the new coordinates 
+        
+     */
 
 
     double lat = asin(sin(latA) * cos(angularDistance) + cos(latA) * sin(angularDistance) * cos(trueCourse));
@@ -177,10 +188,9 @@ Geodetic_Coordinate local2geodetic(Geodetic_Coordinate anchor_origin, Local_Coor
 
 
 
-/* !
+/** !
 
-* @function         tcp_connect
-* @description      Pushes data from client side
+* @brief            Sends data to a server via TCP
 * @param            Pointer to a the message character to be sent 
 * @result           The message is pushed to the tcp socket
 
@@ -215,6 +225,12 @@ int tcp_connect(const char* message) {
     return 0;
 }
 
+/**
+ * @brief  Converts the coordinate format from dd.dddddd  ->  ddmm.mmmmm
+ * @param  Input coordinate 
+ * @result Converted coordinate 
+*/
+
 double type_converter(double input ) {
     // Extract digits before and after the decimal point
     int digits_before_decimal = static_cast<int>(input);
@@ -222,15 +238,13 @@ double type_converter(double input ) {
     
     // Multiply digits before the decimal by 100 and add digits after the decimal
     double result = (digits_before_decimal * 100) + (digits_after_decimal * 60);
-    
-    
 
     return result;
 }
 
 
 
-int main(void) {
+int tag_cfg(void) {
 
     //Init. Tag
     int wait_period = 1000;
@@ -271,50 +285,64 @@ int main(void) {
         HAL_Print("common.uwb_mode     cfg_tag=%d : cfg_node=%d\n", cfg_tag.common.uwb_mode, cfg_node.common.uwb_mode);
         HAL_Print("common.fw_update_en cfg_tag=%d : cfg_node=%d\n", cfg_tag.common.fw_update_en, cfg_node.common.fw_update_en);
         HAL_Print("\nConfiguration failed.\n\n");
+        return 0 ;
+
     } else {
         HAL_Print("\nConfiguration succeeded.\n\n");
+        return 1 ;
     }
-    //End of tag Initialization
+}
 
-    //Successively receive Location in regular intervals ( 1s )
-    dwm_loc_data_t loc;
-    dwm_pos_t pos;
-    loc.p_pos = &pos;
-    Local_Coordinate UV_local(0,77.30,0);
-    while (1) {
-        HAL_Print("Wait %d ms...\n", wait_period);
-        HAL_Delay(wait_period);
 
-        HAL_Print("dwm_loc_get(&loc):\n");
+int main(){
 
-        if (dwm_loc_get(&loc) == RV_OK) {
-            UV_local.x_loc = (loc.p_pos->x)/1000;
-            UV_local.y_loc = (loc.p_pos->y)/1000;
-            UV_local.z_loc=(loc.p_pos->z)/1000;
-        }
+    if (tag_cfg()==1){
+
+        int wait_period = 1000;
+        //Successively receive Location in regular intervals ( 1s )
+        dwm_loc_data_t loc;
+        dwm_pos_t pos;
+        loc.p_pos = &pos;
+        Local_Coordinate UV_local(0,77.30,0);
+        Geodetic_Coordinate anchor_origin(52.1937073, 20.9211908, 0,0); 
+        /*while (1) {
+            HAL_Print("Wait %d ms...\n", wait_period);
+            HAL_Delay(wait_period);
+
+            HAL_Print("dwm_loc_get(&loc):\n");
+
+            if (dwm_loc_get(&loc) == RV_OK) {
+                UV_local.x_loc = (loc.p_pos->x)/1000;
+                UV_local.y_loc = (loc.p_pos->y)/1000;
+                UV_local.z_loc=(loc.p_pos->z)/1000;
+        }*/
+
+        //Calulate the new coordinates to NMEA format 
+        Geodetic_Coordinate destination = local2geodetic(anchor_origin, UV_local);
+
+        //Convert Coordinates to NMEA format (ddmm.mmmmm)
+        destination.Latitude = type_converter(destination.Latitude);
+        destination.Longitude = type_converter(destination.Longitude);
     
-    Geodetic_Coordinate anchor_origin(52.1937073, 20.9211908, 0,0); 
-    Geodetic_Coordinate destination = local2geodetic(anchor_origin, UV_local);
+        //Generate NMEA string 
+        std::string send_NMEA_String = createNMEA_Message(destination);
 
-    // Set the precision for output
-    std::cout << std::fixed << std::setprecision(9);
+        //Type conversion for sending via TCP
+        char charArray[send_NMEA_String.length() + 1]; 
+        strcpy(charArray, send_NMEA_String.c_str());
 
-    //std::cout << "Destination: Latitude " << destination.Latitude << ", Longitude " << destination.Longitude << ", Altitude " << destination.Altitude << std::endl;
+        std::cout<<charArray;
+        
+        //Write NMEA string to the text file 
+        //writeToNotepad(send_NMEA_String);
+        
+        //Send NMEA string to the server via TCP
+        //tcp_connect(charArray);
 
-    destination.Latitude = type_converter(destination.Latitude);
-    destination.Longitude = type_converter(destination.Longitude);
-   
-    std::string send_NMEA_String = createNMEA_Message(destination);
+         
 
-    //Type conversion for sending via TCP
-    char charArray[send_NMEA_String.length() + 1]; // +1 for the null-terminator
-    strcpy(charArray, send_NMEA_String.c_str());
-    std::cout<<charArray;
-    writeToNotepad(send_NMEA_String);
+    }
+}
+
     
-
-    //tcp_connect(charArray);
-
-    }
-    }
 
