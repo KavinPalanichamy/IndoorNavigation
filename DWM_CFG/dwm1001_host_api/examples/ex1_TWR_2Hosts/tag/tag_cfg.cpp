@@ -39,7 +39,12 @@ struct Local_Coordinate {
     Local_Coordinate(double x, double y, double z): x_loc(x) , y_loc(y),z_loc(z){}
    
 };
+
+//global variables 
+
 int tag_cfg_flag =0;
+int tcp_init = 0;
+int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
 
 
 /**
@@ -235,7 +240,30 @@ Geodetic_Coordinate local2geodetic(Geodetic_Coordinate anchor_origin, Local_Coor
 
 */
 
-int tcp_connect(const char* message, int clientSocket) {
+int tcp_connect(const char* message) {
+
+    //Establish tcp connection 
+    if  (tcp_init == 0){
+
+        if (clientSocket == -1) {
+            perror("Error creating socket");
+            return 1;
+        }
+
+        struct sockaddr_in serverAddress;
+        serverAddress.sin_family = AF_INET;
+        serverAddress.sin_port = htons(6100);
+        serverAddress.sin_addr.s_addr = inet_addr("192.168.15.145");
+
+        if (connect(clientSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) == -1) {
+            perror("Error connecting to the server");
+            close(clientSocket);
+            return 1;
+        }
+        std::cout<<"Connected\n";
+        tcp_init =1;
+
+    }
     
     if (send(clientSocket, message, strlen(message), 0) == -1) {
         perror("Error sending data to the server");
@@ -266,7 +294,7 @@ double type_converter(double input ) {
 
 
 
-int tag_cfg(void) {
+int tag_cfg_init(void) {
 
     //Init. Tag
     int wait_period = 1000;
@@ -317,29 +345,17 @@ int tag_cfg(void) {
     }
 }
 
-
 int main(){
 
-    
-    tag_cfg();
-    
-    int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
-    if (clientSocket == -1) {
-        perror("Error creating socket");
-        return 1;
-    }
+    //Setup the tag configuration 
 
-    struct sockaddr_in serverAddress;
-    serverAddress.sin_family = AF_INET;
-    serverAddress.sin_port = htons(6100);
-    serverAddress.sin_addr.s_addr = inet_addr("192.168.15.145");
+    tag_cfg_init();
 
-    if (connect(clientSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) == -1) {
-        perror("Error connecting to the server");
-        close(clientSocket);
-        return 1;
-    }
-    std::cout<<"Connected\n";
+    //Initialize tcp connection 
+    
+    
+    //Set the update rate for the quorvo modules 
+
     dwm_upd_rate_set(1, 1);
 
     while (1){
@@ -387,7 +403,7 @@ int main(){
                 writeToTextFile(send_NMEA_String);
                 
                 //Send NMEA string to the server via TCP
-                tcp_connect(charArray,clientSocket);
+                tcp_connect(charArray);
               
             
             }
