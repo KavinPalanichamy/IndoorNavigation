@@ -10,6 +10,8 @@
 #include <cmath>
 #include <ctime>
 #include <fstream>
+#include<chrono>
+#include<thread>
 
 /** 
  * @brief   Structure definitions
@@ -192,7 +194,9 @@ Geodetic_Coordinate local2geodetic(Geodetic_Coordinate anchor_origin, Local_Coor
     //Finding the total_bearing and the displacement of the mobile robot 
     double local_bearing = atan2(UV_local.y_loc,UV_local.x_loc);
     double displacement_from_origin = sqrt((UV_local.x_loc * UV_local.x_loc)+(UV_local.y_loc * UV_local.y_loc));
-    total_bearing = ((local_bearing)*RadiansToDegrees + anchor_origin.bearing+270);
+    total_bearing = ((local_bearing)*RadiansToDegrees + (anchor_origin.bearing));
+
+    std::cout<<total_bearing<<"  "<<local_bearing*RadiansToDegrees <<'\n';
 
     //Degrees to Radians 
     double latA = anchor_origin.Latitude * DegreesToRadians;
@@ -231,34 +235,16 @@ Geodetic_Coordinate local2geodetic(Geodetic_Coordinate anchor_origin, Local_Coor
 
 */
 
-int tcp_connect(const char* message) {
-    int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
-    if (clientSocket == -1) {
-        perror("Error creating socket");
-        return 1;
-    }
-
-    struct sockaddr_in serverAddress;
-    serverAddress.sin_family = AF_INET;
-    serverAddress.sin_port = htons(6100);
-    serverAddress.sin_addr.s_addr = inet_addr("192.168.15.145");
-
-    if (connect(clientSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) == -1) {
-        perror("Error connecting to the server");
-        close(clientSocket);
-        return 1;
-    }
-    std::cout<<"Connected\n";
-
+int tcp_connect(const char* message, int clientSocket) {
+    
     if (send(clientSocket, message, strlen(message), 0) == -1) {
         perror("Error sending data to the server");
         close(clientSocket);
         return 1;
     }
-    std::cout<<"Sent";
+    std::cout<<"Sent\n";
 
-
-    return 0;
+    return 1;
 }
 
 /**
@@ -336,6 +322,25 @@ int main(){
 
     
     tag_cfg();
+    
+    int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
+    if (clientSocket == -1) {
+        perror("Error creating socket");
+        return 1;
+    }
+
+    struct sockaddr_in serverAddress;
+    serverAddress.sin_family = AF_INET;
+    serverAddress.sin_port = htons(6100);
+    serverAddress.sin_addr.s_addr = inet_addr("192.168.15.145");
+
+    if (connect(clientSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) == -1) {
+        perror("Error connecting to the server");
+        close(clientSocket);
+        return 1;
+    }
+    std::cout<<"Connected\n";
+    dwm_upd_rate_set(1, 1);
 
     while (1){
 
@@ -348,19 +353,18 @@ int main(){
             loc.p_pos = &pos;
 
             Local_Coordinate UV_local(0,0,0);
-            Geodetic_Coordinate anchor_origin(52.1937073, 20.9211908, 0,0); 
+            Geodetic_Coordinate anchor_origin(52.1937073, 20.9211908, 0,210); 
 
-            HAL_Print("Wait %d ms...\n", wait_period);
-           
-
-            HAL_Print("dwm_loc_get(&loc):\n");
+            
+            
 
             if (dwm_loc_get(&loc) == RV_OK) {
                 UV_local.x_loc = (loc.p_pos->x)/1000.0000;
                 UV_local.y_loc = (loc.p_pos->y)/1000.0000;
                 UV_local.z_loc=(loc.p_pos->z)/1000.0000;
             
-                std::cout<<UV_local.x_loc<<"  "<<UV_local.y_loc<<"   "<<UV_local.z_loc;
+                std::cout<<UV_local.x_loc<<"  "<<UV_local.y_loc<<"   "<<UV_local.z_loc<<"\n";
+                HAL_Delay(400);
                 
 
                 //Calulate the new coordinates to NMEA format 
@@ -377,13 +381,14 @@ int main(){
                 char charArray[send_NMEA_String.length() + 1]; 
                 strcpy(charArray, send_NMEA_String.c_str());
 
-                std::cout<<charArray;
+                std::cout<<charArray<<"\n";
                 
                 //Write NMEA string to the text file 
                 writeToTextFile(send_NMEA_String);
                 
                 //Send NMEA string to the server via TCP
-                tcp_connect(charArray);
+                tcp_connect(charArray,clientSocket);
+              
             
             }
 
