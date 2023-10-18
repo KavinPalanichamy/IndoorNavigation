@@ -13,6 +13,8 @@
 #include<chrono>
 #include<thread>
 #include<nmea.h>
+#include<nmea/gpgga.h>
+#include<nmea/gprmc.h>
 
 
 
@@ -46,8 +48,8 @@ struct Local_Coordinate {
 //global variables 
 
 int tag_cfg_flag =0;
-int tcp_init = 0;
-int clientSocket = socket(AF_INET, SOCK_STREAM|SOCK_NONBLOCK, 0);
+ int clientSocket = socket(AF_INET, SOCK_STREAM|SOCK_NONBLOCK, 0);
+
 
 
 /**
@@ -191,10 +193,24 @@ void writeToTextFile( const std::string& data) {
 
 Geodetic_Coordinate nmea_parse(char nmea_incoming[]){
 
+    Geodetic_Coordinate gps_data(0,0,0,0);
     nmea_s *parsed_data;
     parsed_data = nmea_parse(nmea_incoming,strlen(nmea_incoming),0);
+    if(NMEA_GPGLL == parsed_data->type){
+        nmea_gpgga_s *gpggl = (nmea_gpgga_s*)parsed_data;
+        double Lat = gpggl->latitude.degrees + gpggl->latitude.minutes;
+        double Lon = gpggl->longitude.degrees + gpggl->longitude.minutes;
+        gps_data.Latitude = Lat;
+        gps_data.Longitude = Lon;
+        gps_data.Altitude = gpggl->altitude;
+
+        return gps_data;
+
+    }
 
 }
+
+
 /** !
 * @brief                 Converts local coordinates to global geodetic coordinates 
 * @param                 Geodetic_Coordinate Structure, Local_Coordinate structure 
@@ -257,32 +273,37 @@ Geodetic_Coordinate local2geodetic(Geodetic_Coordinate anchor_origin, Local_Coor
 
 */
 
-int tcp_connect(const char* message) {
+int tcp_init() {
 
     //Establish tcp connection 
-    if  (tcp_init == 0){
-
-        if (clientSocket == -1) {
-            perror("Error creating socket");
-            return 1;
-        }
-
-        struct sockaddr_in serverAddress;
-        serverAddress.sin_family = AF_INET;
-        serverAddress.sin_port = htons(6100);
-        serverAddress.sin_addr.s_addr = inet_addr("192.168.15.145");
-
-        if (connect(clientSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) == -1) {
-            perror("Error connecting to the server");
-            close(clientSocket);
-            return 1;
-        }
-        std::cout<<"Connected\n";
-        tcp_init =1;
-
-    }
     
-    if (send(clientSocket, message, strlen(message), 0) == -1) {
+   
+    if (clientSocket == -1) {
+        perror("Error creating socket");
+        return 1;
+    }
+
+    struct sockaddr_in serverAddress;
+    serverAddress.sin_family = AF_INET;
+    serverAddress.sin_port = htons(6100);
+    serverAddress.sin_addr.s_addr = inet_addr("192.168.15.145");
+
+    if (connect(clientSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) == -1) {
+        perror("Error connecting to the server");
+        close(clientSocket);
+        return 1;
+    }
+    std::cout<<"Connected\n";
+   
+    return 1;
+   
+    
+  
+}
+
+int tcp_send(const char* message){
+
+      if (send(clientSocket, message, strlen(message), 0) == -1) {
         perror("Error sending data to the server");
         close(clientSocket);
         return 1;
@@ -291,6 +312,7 @@ int tcp_connect(const char* message) {
 
     return 1;
 }
+
 
 /**
  * @brief  Converts the coordinate format from dd.dddddd  ->  ddmm.mmmmm
@@ -372,6 +394,8 @@ int main(){
 
     tag_cfg_init();
 
+    tcp_init();
+
     while (1){
 
         if (tag_cfg_flag==1){
@@ -414,7 +438,15 @@ int main(){
                 writeToTextFile(send_NMEA_String);
                 
                 //Send NMEA string to the server via TCP
-                tcp_connect(charArray);
+                tcp_send(charArray);
+
+                char gps[100];
+                strcpy(gps,"$GNGGA,113029.00,5211.62244,N,02055.27145,E,2,11,1.40,83.2,M,34.4,M,0.7,0000*59");
+
+                Geodetic_Coordinate parsed_nmea = nmea_parse(gps);
+
+                std::cout<<parsed_nmea.Latitude;
+
             
             }
 
