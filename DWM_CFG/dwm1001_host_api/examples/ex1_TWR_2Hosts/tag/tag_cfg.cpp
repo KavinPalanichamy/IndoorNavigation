@@ -191,7 +191,7 @@ void writeToTextFile( const std::string& data) {
 
 
 
-Geodetic_Coordinate nmea_parse(char nmea_incoming[]){
+Geodetic_Coordinate convert_nmea(char nmea_incoming[]){
 
     Geodetic_Coordinate gps_data(0,0,0,0);
     nmea_s *parsed_data;
@@ -207,6 +207,7 @@ Geodetic_Coordinate nmea_parse(char nmea_incoming[]){
         return gps_data;
 
     }
+    return gps_data;
 
 }
 
@@ -443,7 +444,7 @@ int main(){
                 char gps[100];
                 strcpy(gps,"$GNGGA,113029.00,5211.62244,N,02055.27145,E,2,11,1.40,83.2,M,34.4,M,0.7,0000*59");
 
-                Geodetic_Coordinate parsed_nmea = nmea_parse(gps);
+                Geodetic_Coordinate parsed_nmea = convert_nmea(gps);
 
                 std::cout<<parsed_nmea.Latitude;
 

@@ -8,6 +8,12 @@
 # All rights reserved.
 #
 
+
+INC_DIRS += usr/include/nmea.h
+INC_DIRS += usr/lib/libnmea.so
+INC_DIRS += usr/lib/libnmea
+
+LDFLAGS = usr/lib/ -libnmea -l bcm2835 -lwiringPi -pthread
 ####################################################
 #  Configurations
 
