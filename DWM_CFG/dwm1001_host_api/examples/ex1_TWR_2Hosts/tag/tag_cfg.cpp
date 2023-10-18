@@ -12,6 +12,9 @@
 #include <fstream>
 #include<chrono>
 #include<thread>
+#include<nmea.h>
+
+
 
 /** 
  * @brief   Structure definitions
@@ -37,14 +40,14 @@ struct Local_Coordinate {
   
 
     Local_Coordinate(double x, double y, double z): x_loc(x) , y_loc(y),z_loc(z){}
-   
+
 };
 
 //global variables 
 
 int tag_cfg_flag =0;
 int tcp_init = 0;
-int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
+int clientSocket = socket(AF_INET, SOCK_STREAM|SOCK_NONBLOCK, 0);
 
 
 /**
@@ -52,6 +55,7 @@ int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
  * @param   Geodetic_Coordinate type structure
  * @result  NMEA String 
 */
+
 
 std::string createNMEA_Message(Geodetic_Coordinate SendPosition) {
 
@@ -93,7 +97,6 @@ std::string createNMEA_Message(Geodetic_Coordinate SendPosition) {
     double rmc_magnetic_variation = 0;
     char rmc_mode = 'V';
 
-
     // Create NMEA string
 
     std::ostringstream ggaString;
@@ -117,6 +120,9 @@ std::string createNMEA_Message(Geodetic_Coordinate SendPosition) {
 
     std::string ggaMessage = ggaString.str();
     std::string rmcMessage = rmcString.str();
+
+
+//Generate Checksums to be added at the end of the strings
 
 int ggaChecksum = 0;
 int rmcChecksum = 0;
@@ -146,7 +152,9 @@ for (char c : rmcMessage) {
         rmcChecksum ^= c;
     }
 }
+
     // Add the ggaChecksum and terminate the NMEA message
+
     ggaString << "*" << std::hex << std::setw(2) << std::setfill('0') << ggaChecksum;
     ggaString << "\r\n";
 
@@ -159,6 +167,7 @@ for (char c : rmcMessage) {
 
     return return_message;
 }
+
 
 /**
  * @brief   writes the input parameter in the next line of a word file
@@ -178,6 +187,14 @@ void writeToTextFile( const std::string& data) {
     file.close();
 }
 
+
+
+Geodetic_Coordinate nmea_parse(char nmea_incoming[]){
+
+    nmea_s *parsed_data;
+    parsed_data = nmea_parse(nmea_incoming,strlen(nmea_incoming),0);
+
+}
 /** !
 * @brief                 Converts local coordinates to global geodetic coordinates 
 * @param                 Geodetic_Coordinate Structure, Local_Coordinate structure 
@@ -293,7 +310,6 @@ double type_converter(double input ) {
 }
 
 
-
 int tag_cfg_init(void) {
 
     //Init. Tag
@@ -302,6 +318,7 @@ int tag_cfg_init(void) {
     dwm_cfg_t cfg_node;
 
     HAL_Print("dwm_init(): dev%d\n", HAL_DevNum());
+
     dwm_init();
 
     HAL_Print("Setting to tag: dev%d.\n", HAL_DevNum());
@@ -316,7 +333,11 @@ int tag_cfg_init(void) {
     dwm_cfg_tag_set(&cfg_tag);
 
     HAL_Print("Wait 2s for node to reset.\n");
+
     HAL_Delay(2000);
+     //Set the update rate for the quorvo modules 
+    dwm_upd_rate_set(1, 5);
+
     dwm_cfg_get(&cfg_node);
 
     HAL_Print("Comparing set vs. get: dev%d.\n", HAL_DevNum());
@@ -351,18 +372,9 @@ int main(){
 
     tag_cfg_init();
 
-    //Initialize tcp connection 
-    
-    
-    //Set the update rate for the quorvo modules 
-
-    dwm_upd_rate_set(1, 1);
-
     while (1){
 
         if (tag_cfg_flag==1){
-
-            int wait_period = 1000;
             //Successively receive Location in regular intervals ( 1s )
             dwm_loc_data_t loc;
             dwm_pos_t pos;
@@ -371,15 +383,14 @@ int main(){
             Local_Coordinate UV_local(0,0,0);
             Geodetic_Coordinate anchor_origin(52.1937073, 20.9211908, 0,210); 
 
-            
-            
-
             if (dwm_loc_get(&loc) == RV_OK) {
                 UV_local.x_loc = (loc.p_pos->x)/1000.0000;
                 UV_local.y_loc = (loc.p_pos->y)/1000.0000;
                 UV_local.z_loc=(loc.p_pos->z)/1000.0000;
+
+                double qf = loc.p_pos->qf;
             
-                std::cout<<UV_local.x_loc<<"  "<<UV_local.y_loc<<"   "<<UV_local.z_loc<<"\n";
+                std::cout<<UV_local.x_loc<<"  "<<UV_local.y_loc<<"   "<<UV_local.z_loc<<"\n" <<qf<<"\n";
                 HAL_Delay(400);
                 
 
@@ -404,14 +415,12 @@ int main(){
                 
                 //Send NMEA string to the server via TCP
                 tcp_connect(charArray);
-              
             
             }
 
         }
 
     }
-
 
 }
 
