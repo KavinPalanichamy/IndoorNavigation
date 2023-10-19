@@ -48,7 +48,9 @@ struct Local_Coordinate {
 //global variables 
 
 int tag_cfg_flag =0;
- int clientSocket = socket(AF_INET, SOCK_STREAM|SOCK_NONBLOCK, 0);
+int clientSocket = socket(AF_INET, SOCK_STREAM|SOCK_NONBLOCK, 0);
+
+
 
 
 
@@ -196,18 +198,26 @@ Geodetic_Coordinate convert_nmea(char nmea_incoming[]){
     Geodetic_Coordinate gps_data(0,0,0,0);
     nmea_s *parsed_data;
     parsed_data = nmea_parse(nmea_incoming,strlen(nmea_incoming),0);
-    if(NMEA_GPGLL == parsed_data->type){
+    if(NMEA_GPGGA == parsed_data->type){
         nmea_gpgga_s *gpggl = (nmea_gpgga_s*)parsed_data;
-        double Lat = gpggl->latitude.degrees + gpggl->latitude.minutes;
-        double Lon = gpggl->longitude.degrees + gpggl->longitude.minutes;
+        double Lat = gpggl->latitude.degrees + (gpggl->latitude.minutes/60.00);
+        double Lon = gpggl->longitude.degrees + (gpggl->longitude.minutes/60.00);
+
+        if (gpggl->latitude.cardinal == NMEA_CARDINAL_DIR_SOUTH ){
+            Lat = -Lat;
+        }
+         if (gpggl->longitude.cardinal == NMEA_CARDINAL_DIR_WEST ){
+            Lon = -Lon;
+        }
+       
         gps_data.Latitude = Lat;
         gps_data.Longitude = Lon;
         gps_data.Altitude = gpggl->altitude;
 
-        return gps_data;
+        std::cout<<gpggl->latitude.minutes<<"  "<<gpggl->latitude.degrees;
 
+        return gps_data;
     }
-    return gps_data;
 
 }
 
@@ -235,7 +245,7 @@ Geodetic_Coordinate local2geodetic(Geodetic_Coordinate anchor_origin, Local_Coor
     double displacement_from_origin = sqrt((UV_local.x_loc * UV_local.x_loc)+(UV_local.y_loc * UV_local.y_loc));
     total_bearing = ((local_bearing)*RadiansToDegrees + (anchor_origin.bearing));
 
-    std::cout<<total_bearing<<"  "<<local_bearing*RadiansToDegrees <<'\n';
+   // std::cout<<total_bearing<<"  "<<local_bearing*RadiansToDegrees <<'\n';
 
     //Degrees to Radians 
     double latA = anchor_origin.Latitude * DegreesToRadians;
@@ -312,6 +322,18 @@ int tcp_send(const char* message){
     std::cout<<"Sent\n";
 
     return 1;
+}
+
+std::string tcp_receive(){
+
+    struct sockaddr_in serverAddress;
+    serverAddress.sin_family = AF_INET;
+    serverAddress.sin_port = htons(6100);
+    serverAddress.sin_addr.s_addr = inet_addr("192.168.15.145");
+
+    std::string nmea_return;
+
+    return nmea_return;
 }
 
 
@@ -415,7 +437,7 @@ int main(){
 
                 double qf = loc.p_pos->qf;
             
-                std::cout<<UV_local.x_loc<<"  "<<UV_local.y_loc<<"   "<<UV_local.z_loc<<"\n" <<qf<<"\n";
+                //std::cout<<UV_local.x_loc<<"  "<<UV_local.y_loc<<"   "<<UV_local.z_loc<<"\n" <<qf<<"\n";
                 HAL_Delay(400);
                 
 
@@ -433,7 +455,7 @@ int main(){
                 char charArray[send_NMEA_String.length() + 1]; 
                 strcpy(charArray, send_NMEA_String.c_str());
 
-                std::cout<<charArray<<"\n";
+                //std::cout<<charArray<<"\n";
                 
                 //Write NMEA string to the text file 
                 writeToTextFile(send_NMEA_String);
@@ -441,12 +463,11 @@ int main(){
                 //Send NMEA string to the server via TCP
                 //tcp_send(charArray);
 
-                char gps[100];
-                strcpy(gps,"$GNGGA,113029.00,5211.62244,N,02055.27145,E,2,11,1.40,83.2,M,34.4,M,0.7,0000*59");
+                char gps[]="$GNGGA,113029.00,5211.62244,N,02055.27145,E,2,11,1.40,83.2,M,34.4,M,0.7,0000*59\r\n";
+                Geodetic_Coordinate gps_data(0,0,0,0);
+                gps_data = convert_nmea(gps);
 
-                Geodetic_Coordinate parsed_nmea = convert_nmea(gps);
-
-                std::cout<<parsed_nmea.Latitude;
+                //std::cout<<std::setprecision(5)<<gps_data.Latitude;
 
             
             }
