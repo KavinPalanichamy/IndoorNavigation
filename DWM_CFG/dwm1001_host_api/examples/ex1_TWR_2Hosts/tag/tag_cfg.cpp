@@ -395,7 +395,7 @@ int main(){
 
     tag_cfg_init();
 
-    tcp_init();
+    //tcp_init();
 
     while (1){
 
@@ -439,7 +439,7 @@ int main(){
                 writeToTextFile(send_NMEA_String);
                 
                 //Send NMEA string to the server via TCP
-                tcp_send(charArray);
+                //tcp_send(charArray);
 
                 char gps[100];
                 strcpy(gps,"$GNGGA,113029.00,5211.62244,N,02055.27145,E,2,11,1.40,83.2,M,34.4,M,0.7,0000*59");
