@@ -12,6 +12,11 @@
 #include <fstream>
 #include<chrono>
 #include<thread>
+#include<nmea.h>
+#include<nmea/gpgga.h>
+#include<nmea/gprmc.h>
+
+
 
 /** 
  * @brief   Structure definitions
@@ -37,14 +42,14 @@ struct Local_Coordinate {
   
 
     Local_Coordinate(double x, double y, double z): x_loc(x) , y_loc(y),z_loc(z){}
-   
+
 };
 
 //global variables 
 
 int tag_cfg_flag =0;
-int tcp_init = 0;
-int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
+ int clientSocket = socket(AF_INET, SOCK_STREAM|SOCK_NONBLOCK, 0);
+
 
 
 /**
@@ -52,6 +57,7 @@ int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
  * @param   Geodetic_Coordinate type structure
  * @result  NMEA String 
 */
+
 
 std::string createNMEA_Message(Geodetic_Coordinate SendPosition) {
 
@@ -93,7 +99,6 @@ std::string createNMEA_Message(Geodetic_Coordinate SendPosition) {
     double rmc_magnetic_variation = 0;
     char rmc_mode = 'V';
 
-
     // Create NMEA string
 
     std::ostringstream ggaString;
@@ -117,6 +122,9 @@ std::string createNMEA_Message(Geodetic_Coordinate SendPosition) {
 
     std::string ggaMessage = ggaString.str();
     std::string rmcMessage = rmcString.str();
+
+
+//Generate Checksums to be added at the end of the strings
 
 int ggaChecksum = 0;
 int rmcChecksum = 0;
@@ -146,7 +154,9 @@ for (char c : rmcMessage) {
         rmcChecksum ^= c;
     }
 }
+
     // Add the ggaChecksum and terminate the NMEA message
+
     ggaString << "*" << std::hex << std::setw(2) << std::setfill('0') << ggaChecksum;
     ggaString << "\r\n";
 
@@ -159,6 +169,7 @@ for (char c : rmcMessage) {
 
     return return_message;
 }
+
 
 /**
  * @brief   writes the input parameter in the next line of a word file
@@ -177,6 +188,29 @@ void writeToTextFile( const std::string& data) {
     file << data; // Writing with a newline character
     file.close();
 }
+
+
+
+Geodetic_Coordinate convert_nmea(char nmea_incoming[]){
+
+    Geodetic_Coordinate gps_data(0,0,0,0);
+    nmea_s *parsed_data;
+    parsed_data = nmea_parse(nmea_incoming,strlen(nmea_incoming),0);
+    if(NMEA_GPGLL == parsed_data->type){
+        nmea_gpgga_s *gpggl = (nmea_gpgga_s*)parsed_data;
+        double Lat = gpggl->latitude.degrees + gpggl->latitude.minutes;
+        double Lon = gpggl->longitude.degrees + gpggl->longitude.minutes;
+        gps_data.Latitude = Lat;
+        gps_data.Longitude = Lon;
+        gps_data.Altitude = gpggl->altitude;
+
+        return gps_data;
+
+    }
+    return gps_data;
+
+}
+
 
 /** !
 * @brief                 Converts local coordinates to global geodetic coordinates 
@@ -240,32 +274,37 @@ Geodetic_Coordinate local2geodetic(Geodetic_Coordinate anchor_origin, Local_Coor
 
 */
 
-int tcp_connect(const char* message) {
+int tcp_init() {
 
     //Establish tcp connection 
-    if  (tcp_init == 0){
-
-        if (clientSocket == -1) {
-            perror("Error creating socket");
-            return 1;
-        }
-
-        struct sockaddr_in serverAddress;
-        serverAddress.sin_family = AF_INET;
-        serverAddress.sin_port = htons(6100);
-        serverAddress.sin_addr.s_addr = inet_addr("192.168.15.145");
-
-        if (connect(clientSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) == -1) {
-            perror("Error connecting to the server");
-            close(clientSocket);
-            return 1;
-        }
-        std::cout<<"Connected\n";
-        tcp_init =1;
-
-    }
     
-    if (send(clientSocket, message, strlen(message), 0) == -1) {
+   
+    if (clientSocket == -1) {
+        perror("Error creating socket");
+        return 1;
+    }
+
+    struct sockaddr_in serverAddress;
+    serverAddress.sin_family = AF_INET;
+    serverAddress.sin_port = htons(6100);
+    serverAddress.sin_addr.s_addr = inet_addr("192.168.15.145");
+
+    if (connect(clientSocket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) == -1) {
+        perror("Error connecting to the server");
+        close(clientSocket);
+        return 1;
+    }
+    std::cout<<"Connected\n";
+   
+    return 1;
+   
+    
+  
+}
+
+int tcp_send(const char* message){
+
+      if (send(clientSocket, message, strlen(message), 0) == -1) {
         perror("Error sending data to the server");
         close(clientSocket);
         return 1;
@@ -274,6 +313,7 @@ int tcp_connect(const char* message) {
 
     return 1;
 }
+
 
 /**
  * @brief  Converts the coordinate format from dd.dddddd  ->  ddmm.mmmmm
@@ -293,7 +333,6 @@ double type_converter(double input ) {
 }
 
 
-
 int tag_cfg_init(void) {
 
     //Init. Tag
@@ -302,6 +341,7 @@ int tag_cfg_init(void) {
     dwm_cfg_t cfg_node;
 
     HAL_Print("dwm_init(): dev%d\n", HAL_DevNum());
+
     dwm_init();
 
     HAL_Print("Setting to tag: dev%d.\n", HAL_DevNum());
@@ -316,7 +356,11 @@ int tag_cfg_init(void) {
     dwm_cfg_tag_set(&cfg_tag);
 
     HAL_Print("Wait 2s for node to reset.\n");
+
     HAL_Delay(2000);
+     //Set the update rate for the quorvo modules 
+    dwm_upd_rate_set(1, 5);
+
     dwm_cfg_get(&cfg_node);
 
     HAL_Print("Comparing set vs. get: dev%d.\n", HAL_DevNum());
@@ -351,18 +395,11 @@ int main(){
 
     tag_cfg_init();
 
-    //Initialize tcp connection 
-    
-    
-    //Set the update rate for the quorvo modules 
-
-    dwm_upd_rate_set(1, 1);
+    tcp_init();
 
     while (1){
 
         if (tag_cfg_flag==1){
-
-            int wait_period = 1000;
             //Successively receive Location in regular intervals ( 1s )
             dwm_loc_data_t loc;
             dwm_pos_t pos;
@@ -371,15 +408,14 @@ int main(){
             Local_Coordinate UV_local(0,0,0);
             Geodetic_Coordinate anchor_origin(52.1937073, 20.9211908, 0,210); 
 
-            
-            
-
             if (dwm_loc_get(&loc) == RV_OK) {
                 UV_local.x_loc = (loc.p_pos->x)/1000.0000;
                 UV_local.y_loc = (loc.p_pos->y)/1000.0000;
                 UV_local.z_loc=(loc.p_pos->z)/1000.0000;
+
+                double qf = loc.p_pos->qf;
             
-                std::cout<<UV_local.x_loc<<"  "<<UV_local.y_loc<<"   "<<UV_local.z_loc<<"\n";
+                std::cout<<UV_local.x_loc<<"  "<<UV_local.y_loc<<"   "<<UV_local.z_loc<<"\n" <<qf<<"\n";
                 HAL_Delay(400);
                 
 
@@ -403,15 +439,21 @@ int main(){
                 writeToTextFile(send_NMEA_String);
                 
                 //Send NMEA string to the server via TCP
-                tcp_connect(charArray);
-              
+                tcp_send(charArray);
+
+                char gps[100];
+                strcpy(gps,"$GNGGA,113029.00,5211.62244,N,02055.27145,E,2,11,1.40,83.2,M,34.4,M,0.7,0000*59");
+
+                Geodetic_Coordinate parsed_nmea = convert_nmea(gps);
+
+                std::cout<<parsed_nmea.Latitude;
+
             
             }
 
         }
 
     }
-
 
 }
 
