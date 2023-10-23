@@ -468,7 +468,7 @@ int main(){
                     tcp_send(charArray);
                     std::cout<<"LOCAL -- LOCAL -- LOCAL \n";
                   
-		 }else{
+                    }else{
                      char gps[incoming_gps.length() + 1]; 
                       strcpy(gps, incoming_gps.c_str());
                       tcp_send(gps);
