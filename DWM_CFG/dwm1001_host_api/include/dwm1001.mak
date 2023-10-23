@@ -14,6 +14,8 @@ LIBS=bcm2835
 
 CFLAGS+=-pthread
 CFLAGS+=-lwiringPi  
+CFLAGS+=-lnmea
+
 # Expand defines
 # CFLAGS += $(addprefix -D,$(DEFINES))
 # PROJ_DIR = $(shell pwd)
@@ -53,6 +55,10 @@ LOGFILES += log.txt
 
 INCLUDES += $(LMH_DIR)/lmh.h
 SOURCES += $(LMH_DIR)/lmh.c
+
+INCLUDE += /usr/include/nmea/gpgga.h
+INCLUDE += /usr/include/nmea/gprmc.h
+INCLUDE += /usr/include/nmea.h
 
 ##############################################################################
 #  INTERFACE_NUMBER choice
