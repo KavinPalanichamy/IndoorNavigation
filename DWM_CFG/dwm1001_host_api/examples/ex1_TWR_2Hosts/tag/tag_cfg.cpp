@@ -445,6 +445,10 @@ int main_program(double bearing, double lat,double lon){
                 std::string incoming_gps = tcp_receive();
 
               
+
+                std::string incoming_gps = tcp_receive();
+
+              
                 //Send NMEA string to the server via TCP
 
                 if(UV_local.qf>10){
