@@ -12,12 +12,7 @@
 #include <fstream>
 #include<chrono>
 #include<thread>
-#include<nmea.h>
-#include<nmea/gpgga.h>
-#include<nmea/gprmc.h>
-
-
-
+#include<boost/program_options.hpp>
 /** 
  * @brief   Structure definitions
  * 
@@ -191,20 +186,6 @@ void writeToTextFile( const std::string& data) {
 
 
 
-int convert_nmea (char nmea_incoming[]){
-
-    Geodetic_Coordinate gps_data(0,0,0,0);
-    nmea_s *parsed_data;
-    parsed_data = nmea_parse(nmea_incoming,strlen(nmea_incoming),0);
-    if(NMEA_GPGGA == parsed_data->type){
-        nmea_gpgga_s *gpggl = (nmea_gpgga_s*)parsed_data;
-        char fix = gpggl->position_fix;
-        std::cout<<fix<<"\n";
-        return 0;
-    }
-
-}
-
 
 /** !
 * @brief                 Converts local coordinates to global geodetic coordinates 
@@ -260,13 +241,7 @@ Geodetic_Coordinate local2geodetic(Geodetic_Coordinate anchor_origin, Local_Coor
 
 
 
-/** !
 
-* @brief            Sends data to a server via TCP
-* @param            Pointer to a the message character to be sent 
-* @result           The message is pushed to the tcp socket
-
-*/
 
 int tcp_init() {
 
@@ -306,6 +281,7 @@ int tcp_init() {
     
   
 }
+
 
 int tcp_send(const char* message){
 
@@ -411,18 +387,25 @@ int tag_cfg_init(void) {
     }
 }
 
-int main(){
+int main_program(double bearing, double lat,double lon){
 
-    //Setup the tag configuration 
+    //Initialize the tag
 
     tag_cfg_init();
 
+    //Initialize tcp sockets
+
     tcp_init();
+
+    //Initialize Coordinate stucture 
      Geodetic_Coordinate anchor_origin(52.194042,20.920792,0,40); 
+
+    //continuously fetch and send location ibformation 
 
     while (1){
 
         if (tag_cfg_flag==1){
+
             //Successively receive Location in regular intervals ( 1s )
             dwm_loc_data_t loc;
             dwm_pos_t pos;
@@ -468,7 +451,10 @@ int main(){
                     tcp_send(charArray);
                     std::cout<<"LOCAL -- LOCAL -- LOCAL \n";
                   
-                    }else{
+                    }
+                    
+                    else{
+
                      char gps[incoming_gps.length() + 1]; 
                       strcpy(gps, incoming_gps.c_str());
                       tcp_send(gps);
@@ -481,6 +467,51 @@ int main(){
 
     }
 
+}
+
+//Program for providing terminal interface with three input parametes 
+
+namespace po = boost::program_options;
+
+int main(int argc, char* argv[]) {
+    // Setup the options description for command-line arguments
+    po::options_description desc("Allowed options");
+    desc.add_options()
+        ("help,h", "Display the options")
+        ("bearing,b", po::value<double>(), "Bearing value")
+        ("lat,l", po::value<double>(), "Latitude value")
+        ("lon,o", po::value<double>(), "Longitude value");
+
+    po::variables_map vm;
+
+    try {
+        po::store(po::parse_command_line(argc, argv, desc), vm);
+        po::notify(vm);
+    } catch (const po::error& e) {
+        std::cerr << "Error: " << e.what() << "\n";
+        return 1;
+    }
+
+    if (vm.count("help")) {
+        std::cout << "Usage: main_program [bearing , lat , lon]\n";
+        std::cout << desc << std::endl;
+        return 0;
+    }
+
+    if (vm.count("bearing") && vm.count("lat") && vm.count("lon")) {
+        double bearing = vm["bearing"].as<double>();
+        double lat = vm["lat"].as<double>();
+        double lon = vm["lon"].as<double>();
+        
+     //main_program call if above conditions are satisified 
+        
+        main_program(bearing, lat, lon);
+    } else {
+        std::cerr << "Error: Missing required input parameters. Use --help for usage information.\n";
+        return 1;
+    }
+
+    return 0;
 }
 
     
