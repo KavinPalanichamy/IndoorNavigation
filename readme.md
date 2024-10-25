@@ -11,8 +11,13 @@ This project explores the fusion of Global Positioning System (GPS) and Ultra-Wi
 
 **Keywords:** Indoor Navigation, Ultra-Wide Band, Mobile Robotics
 
+**Keywords:** Indoor Navigation, Ultra-Wide Band, Mobile Robotics
+
+If you can’t see the embedded video, [click here to watch it](DemoVideo.mp4).
+
 <video width="600" controls>
   <source src="DemoVideo.mp4" type="video/mp4">
+  Your browser does not support the video tag.
 </video>
 
 
