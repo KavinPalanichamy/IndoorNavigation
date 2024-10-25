@@ -11,6 +11,8 @@ This project explores the fusion of Global Positioning System (GPS) and Ultra-Wi
 
 **Keywords:** Indoor Navigation, Ultra-Wide Band, Mobile Robotics
 
+![Robot mapping without GNSS](../DemoVideo.mp4)
+
 ## 1. UWB-Based Indoor Positioning System
 
 ### 1.1 Introduction
