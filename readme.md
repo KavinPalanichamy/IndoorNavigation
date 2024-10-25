@@ -30,6 +30,7 @@ Using Qorvo's API, a program on a Raspberry Pi retrieves coordinates, converting
 
 ## 2. Network Structure
 The core navigation software on a Raspberry Pi sends data in NMEA format to the robot. The robot then displays the exact position on a high-resolution map.
+![125](https://github.com/user-attachments/assets/eed195a6-dddd-41a9-a969-39685a36e94e)
 
 ## 3. Converting Local to Global Coordinates
 
