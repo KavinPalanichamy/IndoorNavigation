@@ -1,19 +1,16 @@
 # Seamless Navigation: Integration of GPS and UWB-Based Indoor Positioning Systems for Enhanced Localization for Mobile Robots
 
 **Contributors:**  
-Kavin Palanichamy   
-Arkadiusz Perski  
-Rafal  
-Marcin  
+Kavin Palanichamy, Arkadiusz Perski, Rafal, Marcin
+
+## Video demonstrating the noise free location data acquisition of the mobile robot using UWB beacons
+
+https://github.com/user-attachments/assets/bf38b609-2ee9-4685-a4ea-dfb90e64ee9b
 
 ## Abstract
 This project explores the fusion of Global Positioning System (GPS) and Ultra-Wideband (UWB) technology to improve indoor navigation. GPS lacks accuracy indoors due to signal obstructions, while UWB offers centimeter-level precision. By seamlessly transitioning between GPS and UWB, this system ensures continuous and accurate positioning for mobile robots across indoor and outdoor environments.
 
 **Keywords:** Indoor Navigation, Ultra-Wide Band, Mobile Robotics
-
-## Video demonstrating the noise free location data acquisition of the mobile robot using UWB beacons
-
-https://github.com/user-attachments/assets/bf38b609-2ee9-4685-a4ea-dfb90e64ee9b
 
 ## 1. UWB-Based Indoor Positioning System
 
