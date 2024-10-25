@@ -1,7 +1,7 @@
 # Seamless Navigation: Integration of GPS and UWB-Based Indoor Positioning Systems for Enhanced Localization for Mobile Robots
 
-**Authors:**  
-Kavin Palanichamy (PIAP Lukasiewicz, Warsaw, Poland)  
+**Contributors:**  
+Kavin Palanichamy   
 Arkadiusz Perski  
 Rafal  
 Marcin  
