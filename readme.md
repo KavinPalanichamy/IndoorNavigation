@@ -1,4 +1,4 @@
-# Integration of GPS and UWB-Based Indoor Positioning Systems for Enhanced Localization for Mobile Robots
+# Integration of GNSS and UWB-Based Indoor Positioning Systems for Enhanced Localization for Mobile Robots
 
 **Contributors:**  
 Kavin Palanichamy, Arkadiusz Perski, Rafal, Marcin
